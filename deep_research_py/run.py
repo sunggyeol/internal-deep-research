@@ -5,9 +5,7 @@ from prompt_toolkit import PromptSession
 from feedback import generate_feedback
 from ai.providers import get_ai_client
 from utils import set_model
-from common.token_consumption import counter
-from common.logging import log_event
-from deep_research import research_from_directory, write_final_report
+from deep_research import research_from_directory, write_final_report, iterative_research
 
 load_dotenv()
 app = typer.Typer()
@@ -30,20 +28,13 @@ async def main(
     concurrency: int = typer.Option(2, help="Number of concurrent tasks (affects API rate limits)."),
     model: str = typer.Option("gpt-4o", help="Which model to use?"),
     max_followup_questions: int = typer.Option(5, help="Maximum follow-up questions to generate (only in interactive mode)."),
-    enable_logging: bool = typer.Option(False, help="Enable logging."),
-    log_path: str = typer.Option("logs", help="Path to save logs."),
-    log_to_stdout: bool = typer.Option(False, help="Log to stdout."),
+    iterations: int = typer.Option(3, help="Number of iterative research cycles."),
 ):
     set_model(model)
     
-    if enable_logging:
-        from common.logging import initial_logger
-        initial_logger(logging_path=log_path, enable_stdout=log_to_stdout)
-        print(f"Logging enabled. Logs will be saved to {log_path}")
-    
     print("Deep Research Assistant")
     print("An AI-powered research tool")
-    print("Using OpenAI as the LLM provider.\n")
+    print("Using litellm as the LLM provider.\n")
     
     client = get_ai_client()
     
@@ -52,8 +43,8 @@ async def main(
     
     if directory:
         print(f"Aggregating files from directory: {directory}")
-        print("Generating report from files...")
-        result = await research_from_directory(directory, query, client, model)
+        print("Starting iterative research process...")
+        result = await iterative_research(directory, query, client, model, iterations=iterations)
         report = result.get("report", "No report generated.")
         
         print("\nResearch Complete!")
@@ -62,8 +53,6 @@ async def main(
         
         with open("output.md", "w", encoding="utf-8") as f:
             f.write(report)
-        if enable_logging:
-            log_event("Report has been saved to output.md (file-based research mode).")
     
     else:
         print("Creating research plan...")
@@ -101,8 +90,6 @@ Follow-up Questions and Answers:
     
         with open("output.md", "w", encoding="utf-8") as f:
             f.write(report)
-        if enable_logging:
-            log_event("Report has been saved to output.md (interactive mode).")
 
 def run():
     asyncio.run(app())
