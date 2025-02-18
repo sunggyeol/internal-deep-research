@@ -172,3 +172,12 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Ignore sample_files directory and its contents
+sample_files/
+
+# Ignore embeddings_index directory and its contents
+embeddings_index/
+
+# Ignore output.md file
+output.md
