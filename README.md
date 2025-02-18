@@ -1,81 +1,61 @@
 # Internal Deep Research
 
-Internal Deep Research is an AI-powered tool designed to help organizations generate comprehensive research reports from internal documents. Inspired by "Deep Research" methodologies from OpenAI, Google, and Gemini, this project aggregates content from text and markdown files and synthesizes it into detailed markdown reports.
+Internal Deep Research is an AI-powered tool designed to help organizations generate comprehensive research reports from internal documents. Inspired by deep research methodologies from OpenAI, Google, and Gemini, this project aggregates content from text and markdown files and synthesizes it into detailed markdown reports.
 
-This repository's structure and core concept are adapted from [deep-research-py](https://github.com/epuerta9/deep-research-py). However, **this version intentionally removes search functionality** to focus solely on internal file-based research.
-
-For now, the tool supports only `.txt` and `.md` files, with planned support for PDFs, images, and other formats in the future.
+This repository's structure and core concept are adapted from [deep-research-py](https://github.com/epuerta9/deep-research-py). Note that this version focuses exclusively on internal file-based research.
 
 ## Overview
 
-Internal Deep Research helps analysts and researchers quickly generate AI-powered research reports from internal files. The system works by scanning a specified directory for research-related documents, aggregating their content, and then passing a combined prompt (including a research query) to OpenAI's LLM to produce a structured markdown report.
+Internal Deep Research helps analysts and researchers quickly generate AI-powered research reports from internal files. The system works by scanning a specified directory for research-related documents, aggregating their content, and then passing a combined prompt—including an iterative refinement process—to an LLM to produce a structured markdown report with clear citations.
 
 ## Features
 
 - **File Aggregation:**  
-  Recursively aggregates content from `.txt` and `.md` files within a specified directory.
+  Recursively aggregates content from `.txt` and `.md` files within a specified directory. Each document’s source is preserved for citation purposes.
 
 - **AI-Powered Report Generation:**  
-  Uses OpenAI's LLM to analyze the aggregated content and generate a research report.
+  Uses an LLM to analyze the aggregated content and generate a comprehensive research report that includes citations indicating the source of each piece of information.
 
+- **Iterative Research Process:**  
+  Incorporates an iterative cycle where:
+  - The document corpus is processed once into a FAISS vector store.
+  - The system generates follow-up question prompts based on the current research query.
+  - Each prompt is used to retrieve relevant document chunks with citation markers.
+  - A final report is synthesized and then used to refine the research query for the next cycle.
+  
 - **Modular Architecture:**  
   The project is organized into several modules:
-  - **aggregator.py** – Aggregates text content from files in a directory.
-  - **ai/providers.py** – Configures and manages the OpenAI API client.
+  - **aggregator.py** – Aggregates text content from files in a directory while retaining source metadata.
+  - **ai/providers.py** – Configures and manages the LLM API client.
   - **text_splitter.py** – Splits large texts into manageable chunks.
-  - **deep_research.py** – Core research logic for synthesizing a final report.
-  - **feedback.py** – (Optional) Generates follow-up questions for interactive research mode.
+  - **deep_research.py** – Contains the core research logic, including iterative report generation and citation handling.
+  - **feedback.py** – Generates follow-up questions to refine research queries.
   - **prompt.py** – Houses the system prompt used to guide the AI.
   - **run.py** – The command-line entry point.
   - **utils.py** – Contains utility functions for configuration.
-  - **common/logging.py & token_cunsumption.py** – Handle logging and token consumption tracking.
 
 - **Plain-Text CLI Interface:**  
-  The tool operates via a simple text-based interface without requiring rich-text UI libraries.
-
-## Project Structure
-
-```
-internal-deep-research/
-├── README.md
-├── deep_research_py/
-│   ├── __init__.py
-│   ├── aggregator.py              # Aggregates content from text and markdown files.
-│   ├── ai/
-│   │   ├── __init__.py
-│   │   └── providers.py           # Configures and provides access to the OpenAI API.
-│   ├── text_splitter.py           # Splits long text into manageable chunks.
-│   ├── deep_research.py           # Core research logic and report generation.
-│   ├── feedback.py               # Generates follow-up questions (for interactive mode).
-│   ├── prompt.py                  # Contains the system prompt for the AI.
-│   ├── run.py                     # CLI entry point.
-│   ├── utils.py                   # Utility functions for configuration.
-│   └── common/
-│       ├── logging.py             # Logging utilities.
-│       └── token_cunsumption.py   # Token consumption tracking.
-└── sample_files/                  # (Optional) Sample files for testing.
-    ├── sample1.txt
-    ├── sample2.md
-    └── sample3.txt
-```
+  The tool operates via a simple text-based interface, making it straightforward to use in various environments.
 
 ## How It Works
 
 1. **Initialization:**  
-   - The tool loads environment variables (including your OpenAI API key) using `dotenv`.
-   - The OpenAI client is initialized.
+   - The tool loads environment variables (including your API key) using `dotenv`.
+   - The LLM client is initialized.
 
 2. **File Aggregation:**  
-   - If the `--directory` option is used, the tool recursively scans for `.txt` and `.md` files.
-   - The content from these files is aggregated into a single text string.
+   - When the `--directory` option is used, the tool recursively scans for `.txt` and `.md` files.
+   - The content from these files is aggregated along with metadata indicating each file’s source.
 
-3. **Prompt Generation:**  
+3. **Prompt Generation and Iterative Research:**  
    - The user provides a research query.
-   - This query is combined with the aggregated file content to form a structured prompt.
-   - The prompt is sent to OpenAI's LLM for report generation.
+   - The system processes the aggregated documents into a FAISS vector store.
+   - The LLM generates follow-up question prompts based on the current query.
+   - Each prompt is used to retrieve relevant document chunks, with citations showing the file source.
+   - A final report is generated for the iteration and is then used to refine the research query for subsequent cycles.
 
 4. **Report Generation:**  
-   - The AI processes the prompt and returns a well-structured markdown research report.
+   - The AI synthesizes the provided context and generates a detailed markdown research report that includes clear citations.
 
 5. **Output:**  
    - The generated report is displayed in the terminal.
@@ -104,7 +84,7 @@ internal-deep-research/
    ```
 
 4. **Set Up Environment Variables:**  
-   Create a `.env` file in the root directory and add your OpenAI API key:
+   Create a `.env` file in the root directory and add your API key:
 
    ```
    OPENAI_API_KEY=your_openai_api_key
@@ -117,8 +97,10 @@ internal-deep-research/
 Run the tool on a directory containing research files:
 
 ```bash
-python deep_research_py/run.py --directory "sample_files"
+python deep_research_py/run.py --directory "sample_files" --iterations 3
 ```
+
+This command will execute the iterative research process, retrieving document content with citations and refining the query over multiple iterations.
 
 ### Interactive Mode
 
@@ -131,17 +113,14 @@ python deep_research_py/run.py
 ## Future Enhancements
 
 - **Expanded File Support:**  
-  - Planned support for PDF, image-based text extraction, and other formats.
+  Planned support for PDFs, image-based text extraction, and additional formats.
 
-- **Improved Interactive Mode:**  
-  - Enhanced feedback generation for refining research queries.
+- **Enhanced Interactive Experience:**  
+  Further refinements in feedback generation and query refinement.
 
 ## Acknowledgements
 
-This project is **inspired by "Deep Research" methodologies** developed by OpenAI, Google, and Gemini.
-
-It is **adapted from [deep-research-py](https://github.com/epuerta9/deep-research-py)**.  
-However, **this version removes search engine integration**, focusing entirely on **internal file-based research**.
+This project is inspired by deep research methodologies developed by OpenAI, Google, and Gemini. It is adapted from [deep-research-py](https://github.com/epuerta9/deep-research-py) with a focus on internal file-based research.
 
 ## License
 
