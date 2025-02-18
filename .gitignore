@@ -180,4 +180,4 @@ sample_files/
 embeddings_index/
 
 # Ignore output.md file
-output.md
+outputs/

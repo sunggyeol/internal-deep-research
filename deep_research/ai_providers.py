@@ -7,9 +7,9 @@ from text_splitter import RecursiveCharacterTextSplitter
 load_dotenv()
 
 def get_ai_client():
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        raise Exception("Missing OPENAI_API_KEY in environment")
+        raise Exception("Missing GEMINI_API_KEY in environment")
     # litellm uses the API key from the environment, so simply return the module.
     import litellm
     return litellm

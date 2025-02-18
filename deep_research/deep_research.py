@@ -120,7 +120,7 @@ async def research_from_directory(
     from langchain_community.docstore.in_memory import InMemoryDocstore
     from langchain_community.vectorstores import FAISS
     import faiss
-    embeddings_model = OpenAIEmbeddings(model="text-embedding-ada-002")
+    embeddings_model = OpenAIEmbeddings(model="gemini/text-embedding-004")
     sample_embedding = embeddings_model.embed_query(chunks[0]["page_content"])
     dim = len(sample_embedding) if sample_embedding else 768
     index = faiss.IndexFlatL2(dim)
