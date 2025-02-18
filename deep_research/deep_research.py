@@ -2,7 +2,7 @@ from typing import List, Dict
 import asyncio
 import json
 from pydantic import BaseModel
-from ai.providers import generate_completions
+from ai_providers import generate_completions
 from prompt import system_prompt
 
 class FinalReportResponse(BaseModel):

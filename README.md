@@ -1,6 +1,6 @@
 # Internal Deep Research
 
-Internal Deep Research is an AI-powered tool designed to help organizations generate comprehensive research reports from internal documents. Inspired by deep research methodologies from OpenAI, Google, and Gemini, this project aggregates content from text and markdown files and synthesizes it into detailed markdown reports.
+Internal Deep Research is an AI-powered tool designed to help organizations generate comprehensive research reports from internal documents. Inspired by deep research methodologies from OpenAI, Google, and Perplexity, this project aggregates content from text and markdown files and synthesizes it into detailed markdown reports.
 
 This repository's structure and core concept are adapted from [deep-research-py](https://github.com/epuerta9/deep-research-py). Note that this version focuses exclusively on internal file-based research.
 
@@ -26,7 +26,7 @@ Internal Deep Research helps analysts and researchers quickly generate AI-powere
 - **Modular Architecture:**  
   The project is organized into several modules:
   - **aggregator.py** – Aggregates text content from files in a directory while retaining source metadata.
-  - **ai/providers.py** – Configures and manages the LLM API client.
+  - **ai_providers.py** – Configures and manages the LLM API client.
   - **text_splitter.py** – Splits large texts into manageable chunks.
   - **deep_research.py** – Contains the core research logic, including iterative report generation and citation handling.
   - **feedback.py** – Generates follow-up questions to refine research queries.
@@ -120,7 +120,7 @@ python deep_research_py/run.py
 
 ## Acknowledgements
 
-This project is inspired by deep research methodologies developed by OpenAI, Google, and Gemini. It is adapted from [deep-research-py](https://github.com/epuerta9/deep-research-py) with a focus on internal file-based research.
+This project is inspired by deep research methodologies developed by OpenAI, Google, and Perplexity. It is adapted from [deep-research-py](https://github.com/epuerta9/deep-research-py) with a focus on internal file-based research.
 
 ## License
 

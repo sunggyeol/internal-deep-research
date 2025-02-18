@@ -1,7 +1,7 @@
 from typing import List
 import json
 from prompt import system_prompt
-from ai.providers import generate_completions
+from ai_providers import generate_completions
 from pydantic import BaseModel, ValidationError
 
 class FeedbackResponse(BaseModel):

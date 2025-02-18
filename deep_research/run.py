@@ -3,7 +3,7 @@ import asyncio
 import typer
 from prompt_toolkit import PromptSession
 from feedback import generate_feedback
-from ai.providers import get_ai_client
+from ai_providers import get_ai_client
 from utils import set_model
 from deep_research import research_from_directory, write_final_report, iterative_research
 
