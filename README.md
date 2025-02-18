@@ -6,14 +6,6 @@ This repository's structure and core concept are adapted from [deep-research-py]
 
 For now, the tool supports only `.txt` and `.md` files, with planned support for PDFs, images, and other formats in the future.
 
-## Repository
-
-https://github.com/sunggyeol/internal-deep-research
-
-## License
-
-This project is licensed under the MIT License.
-
 ## Overview
 
 Internal Deep Research helps analysts and researchers quickly generate AI-powered research reports from internal files. The system works by scanning a specified directory for research-related documents, aggregating their content, and then passing a combined prompt (including a research query) to OpenAI's LLM to produce a structured markdown report.
