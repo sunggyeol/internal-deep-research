@@ -14,8 +14,9 @@ async def generate_feedback(
     max_feedbacks: int = 5,
 ) -> List[str]:
     prompt = (
-        f"Given this research topic: {query}, generate at most {max_feedbacks} follow-up questions to better understand the user's research needs. "
-        "Return the response as a JSON object with a 'questions' array field."
+        f"Given this research topic: {query}, generate at most {max_feedbacks} investigative questions that explore key aspects, "
+        "gaps, relationships, and implications of this topic. Focus on questions about the knowledge domain itself, "
+        "not questions for the user. Return the response as a JSON object with a 'questions' array field."
     )
     messages = [
         {"role": "system", "content": system_prompt()},
