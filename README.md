@@ -2,8 +2,6 @@
 
 Internal Deep Research is an AI-powered tool designed to help organizations generate comprehensive research reports from internal documents. Inspired by deep research methodologies from OpenAI, Google, and Perplexity, this project aggregates content from text and markdown files and synthesizes it into detailed markdown reports.
 
-This repository's structure and core concept are adapted from [deep-research-py](https://github.com/epuerta9/deep-research-py). Note that this version focuses exclusively on internal file-based research.
-
 ## Overview
 
 Internal Deep Research helps analysts and researchers quickly generate AI-powered research reports from internal files. The system works by scanning a specified directory for research-related documents, aggregating their content, and then passing a combined prompt—including an iterative refinement process—to an LLM to produce a structured markdown report with clear citations.
