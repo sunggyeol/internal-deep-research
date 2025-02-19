@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import asyncio
 import json
 from pydantic import BaseModel
@@ -7,6 +7,74 @@ from prompt import system_prompt
 
 class FinalReportResponse(BaseModel):
     reportMarkdown: str
+
+def create_citation_mapping(text: str) -> Tuple[str, Dict[str, int], Dict[int, str]]:
+    """Convert file path citations to numbered citations and create mapping dictionaries."""
+    import re
+    
+    # Find all unique citations in the format [Citation: path]
+    citations = re.findall(r'\[Citation: ([^\]]+)\]', text)
+    unique_citations = sorted(set(citations))
+    
+    # Create mappings
+    path_to_number = {path: idx + 1 for idx, path in enumerate(unique_citations)}
+    number_to_path = {idx + 1: path for idx, path in enumerate(unique_citations)}
+    
+    # Replace citations in text
+    for path, number in path_to_number.items():
+        text = text.replace(f'[Citation: {path}]', f'[{number}]')
+    
+    return text, path_to_number, number_to_path
+
+def parse_final_report_response(response_text: str) -> str:
+    """Consolidated JSON parsing for final report responses."""
+    from pydantic import ValidationError
+    import json, re
+    # Try direct JSON parsing
+    try:
+        if response_text.startswith("{") and response_text.endswith("}"):
+            result = FinalReportResponse.model_validate_json(response_text)
+            if result.reportMarkdown:
+                return result.reportMarkdown
+    except ValidationError:
+        pass
+    # Try extracting JSON from code block
+    if response_text.startswith("```json"):
+        try:
+            json_content = response_text.split("```json")[1].split("```")[0].strip()
+            result = FinalReportResponse.model_validate_json(json_content)
+            if result.reportMarkdown:
+                return result.reportMarkdown
+        except Exception:
+            pass
+    # Try regex extraction
+    try:
+        markdown_match = re.search(r'"reportMarkdown":\s*"(.*?)(?<!\\)"(?=(,|\s*}))', response_text, re.DOTALL)
+        if markdown_match:
+            markdown_content = markdown_match.group(1).replace('\\"', '"')
+            return markdown_content
+    except Exception:
+        pass
+    # Fallback if response looks like markdown
+    if "# " in response_text or "## " in response_text:
+        return response_text
+    return ""
+
+async def format_markdown(report: str, client, model) -> str:
+    """Format the given markdown using LLM."""
+    reformat_prompt = (
+        f"The following markdown appears to be incorrectly formatted. "
+        f"Please reformat it to adhere strictly to proper markdown formatting with a title and sections. "
+        f"Do not add any code block indicators like ```markdown - return pure markdown text only.\n\n"
+        f"{report}"
+    )
+    messages = [
+        {"role": "system", "content": system_prompt()},
+        {"role": "user", "content": reformat_prompt},
+    ]
+    response = await generate_completions(client=client, model=model, messages=messages, format=None)
+    reformatted = response.choices[0].message.content.strip()
+    return reformatted
 
 async def write_final_report(
     prompt: str,
@@ -35,7 +103,7 @@ async def write_final_report(
         f"5. For each fact or statement, explicitly reference the source using [Citation: source_path]\n"
         f"6. When multiple sources discuss the same topic, synthesize and compare their information\n"
         f"7. Use direct quotes sparingly and only when particularly important, formatted as '...quote...' with proper citation\n"
-        f"8. In the References section, list all cited sources in alphabetical order, using only the source paths from [Citation: source_path]\n\n"
+        f"8. In the References section, list all citations in order by number [1], [2], etc.\n\n"
         f"<prompt>{prompt}</prompt>\n\n"
         f"Here are the learnings:\n\n<learnings>\n{learnings_string}\n</learnings>"
     )
@@ -47,45 +115,11 @@ async def write_final_report(
     try:
         response = await generate_completions(client=client, model=model, messages=messages, format=FinalReportResponse.model_json_schema())
         response_text = response.choices[0].message.content.strip()
-        
-        # First try parsing as pure JSON
-        if response_text.startswith("{") and response_text.endswith("}"):
-            try:
-                result = FinalReportResponse.model_validate_json(response_text)
-                if result.reportMarkdown:
-                    return result.reportMarkdown
-            except Exception as json_error:
-                print(f"JSON parsing error: {json_error}")
-        
-        # If that fails, try extracting JSON from markdown code blocks
-        if response_text.startswith("```json"):
-            try:
-                json_content = response_text.split("```json")[1].split("```")[0].strip()
-                result = FinalReportResponse.model_validate_json(json_content)
-                if result.reportMarkdown:
-                    return result.reportMarkdown
-            except Exception as block_error:
-                print(f"Code block parsing error: {block_error}")
-        
-        # If all JSON parsing fails, try to extract markdown content directly
-        try:
-            # Look for markdown content between quotes in the response
-            import re
-            markdown_match = re.search(r'"reportMarkdown":\s*"(.*?)(?<!\\)"(?=(,|\s*}))', response_text, re.DOTALL)
-            if markdown_match:
-                # Unescape any escaped quotes and return the markdown
-                markdown_content = markdown_match.group(1).replace('\\"', '"')
-                return markdown_content
-        except Exception as re_error:
-            print(f"Regex extraction error: {re_error}")
-        
-        # Last resort: return the raw response if it looks like markdown
-        if "# " in response_text or "## " in response_text:
-            return response_text
-        
-        # If nothing works, return an error message
+        markdown_content = parse_final_report_response(response_text)
+        if markdown_content:
+            processed_content, _, _ = create_citation_mapping(markdown_content)
+            return processed_content
         return "Error: Unable to parse the report response"
-    
     except Exception as e:
         print(f"Error in write_final_report: {str(e)}")
         return f"Error generating report: {str(e)}"
@@ -152,8 +186,11 @@ async def research_from_directory(
         for doc in search_results
     ])
     
-    full_prompt = f"Research query: {query}\n\nRelevant context from documents:\n\n{context_with_citations}"
-    learnings = [context_with_citations]
+    # Convert citations to numbered format
+    processed_context, _, _ = create_citation_mapping(context_with_citations)
+    
+    full_prompt = f"Research query: {query}\n\nRelevant context from documents:\n\n{processed_context}"
+    learnings = [processed_context]
     report = await write_final_report(
         prompt=full_prompt,
         learnings=learnings,
@@ -249,11 +286,14 @@ async def iterative_research(
                 contexts.append(context_with_citations)
             combined_context = "\n".join(contexts)
             
+            # Convert citations to numbered format
+            processed_context, _, _ = create_citation_mapping(combined_context)
+            
             print("Step 5: Generating final report for this iteration...")
-            full_prompt = f"Research query: {current_query}\n\nRelevant context from documents:\n\n{combined_context}"
+            full_prompt = f"Research query: {current_query}\n\nRelevant context from documents:\n\n{processed_context}"
             final_report = await write_final_report(
                 prompt=full_prompt,
-                learnings=[combined_context],
+                learnings=[processed_context],
                 visited_urls=[],
                 client=client,
                 model=model,

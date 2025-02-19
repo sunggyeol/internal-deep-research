@@ -5,7 +5,7 @@ from prompt_toolkit import PromptSession
 from feedback import generate_feedback
 from ai_providers import get_ai_client
 from utils import set_model, convert_to_pdf
-from deep_research import research_from_directory, write_final_report, iterative_research
+from deep_research import research_from_directory, write_final_report, iterative_research, format_markdown
 import os
 
 load_dotenv()
@@ -50,6 +50,9 @@ async def main(
         report = result.get("report", "No report generated.")
         
         print("\nResearch Complete!")
+        # Format report once using LLM before saving
+        report = await format_markdown(report, client, model)
+        
         print("\nFinal Report:")
         print(report)
         
