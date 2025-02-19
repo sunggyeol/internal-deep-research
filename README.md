@@ -97,7 +97,7 @@ Internal Deep Research helps analysts and researchers quickly generate AI-powere
 Run the tool on a directory containing research files:
 
 ```bash
-python deep_research_py/run.py --directory "sample_files" --iterations 3
+python deep_research_py/run.py --directory "knowledge_base" --iterations 5
 ```
 
 This command will execute the iterative research process, retrieving document content with citations and refining the query over multiple iterations.
